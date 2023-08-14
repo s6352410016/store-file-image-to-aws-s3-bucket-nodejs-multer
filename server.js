@@ -46,14 +46,25 @@ app.post('/upload', upload.array('image'), (req, res) => {
     // wait for all files upload to aws s3 bucket complete
     Promise.all(promises)
         .then((result) => {
-            const imgUrl = result.map((resultFromAWS) => resultFromAWS.Location);
-            res.status(200).json({imageUrl: imgUrl});
+            const fileName = result.map((resultFromAWS) => resultFromAWS.key);
+            res.status(200).json({fileName: fileName});
         })
         .catch((err) => {
             res.status(500).json(err);
         });
 });
 
+app.get('/image/:key' , (req , res) => {
+    const dowloadParams = {
+        Bucket: process.env.AWS_BUCKET_NAME,
+        Key: req.params.key
+    }
+    // dowload file image from aws s3 bucket and read file stream
+    const result = S3.getObject(dowloadParams).createReadStream();
+    // send image to response
+    result.pipe(res);
+});
+
 app.listen(5000, () => {
     console.log('Starting server...');
-})
+});
